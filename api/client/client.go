@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 )
 
@@ -35,28 +34,6 @@ func (method requestMethod) String() string {
 	default:
 		return fmt.Sprintf("Unknown(%d)", method)
 	}
-}
-
-func JoinURL(base string, paths ...string) string {
-	p := path.Join(paths...)
-	return fmt.Sprintf("%s/%s", strings.TrimRight(base, "/"), strings.TrimLeft(p, "/"))
-}
-
-func ParseURL(someURL string) string {
-	u, err := url.Parse(someURL)
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("\nScheme: %s\n  Host: %s\n  Path: %s\n Query: %s\n",
-		u.Scheme, u.Hostname(), u.Path, u.RawQuery)
-}
-
-func BaseURL(url string) string {
-	idx := strings.LastIndex(url, "/")
-	if idx != -1 {
-		url = url[:idx]
-	}
-	return url
 }
 
 func Get(url string, headers map[string]string, queryParams url.Values) ([]byte, error) {
