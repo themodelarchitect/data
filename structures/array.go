@@ -1,4 +1,4 @@
-package array
+package structures
 
 import (
 	"encoding/json"
