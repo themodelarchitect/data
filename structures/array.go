@@ -10,8 +10,8 @@ type Array[T any] struct {
 	values []T
 }
 
-// New creates a new array.
-func New[T any]() *Array[T] {
+// NewArray creates a new array.
+func NewArray[T any]() *Array[T] {
 	return &Array[T]{
 		length: 0,
 		values: make([]T, 0),
@@ -119,7 +119,7 @@ func (arr *Array[T]) Reverse() {
 
 // Copy the values into a new array.
 func (arr *Array[T]) Copy() *Array[T] {
-	copyOfArray := New[T]()
+	copyOfArray := NewArray[T]()
 	for i := 0; i < arr.Length(); i++ {
 		value := arr.Lookup(i)
 		copyOfArray.Push(value)
