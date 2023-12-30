@@ -54,7 +54,8 @@ func (p *PosgresDB[M]) fields(rows pgx.Rows) []string {
 	return fields
 }
 
-func (p *PosgresDB[M]) Create(ctx context.Context, m M) error {
+func (p *PosgresDB[M]) Create(ctx context.Context, m M) (any, error) {
+	var key any
 	params := m.Params()
 
 	cols := make([]string, 0, len(params))
@@ -77,22 +78,23 @@ func (p *PosgresDB[M]) Create(ctx context.Context, m M) error {
 	rows, err := p.Query(ctx, q.Build(), q.Args()...)
 
 	if err != nil {
-		return err
+		return key, err
 	}
 
 	defer rows.Close()
 
 	if !rows.Next() {
 		if err := rows.Err(); err != nil {
-			return err
+			return key, err
 		}
-		return nil
 	}
 
 	if err := m.Scan(p.fields(rows), rows.Scan); err != nil {
-		return nil
+		return key, nil
 	}
-	return nil
+
+	_, key = m.Primary()
+	return key, nil
 }
 
 func (p *PosgresDB[M]) Update(ctx context.Context, m M) error {

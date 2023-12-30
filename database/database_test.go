@@ -65,7 +65,7 @@ func TestPosgresDB(t *testing.T) {
 	})
 
 	username := gofakeit.Username()
-	err = users.Create(context.TODO(), &User{
+	id, err := users.Create(context.TODO(), &User{
 		ID:        0,
 		Email:     gofakeit.Email(),
 		Username:  username,
@@ -75,6 +75,12 @@ func TestPosgresDB(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
+	}
+
+	if id != nil {
+		t.Log("id: ", id)
+	} else {
+		t.Fatal("no id returned")
 	}
 
 	u, ok, err := users.Get(context.TODO(), query.Where("username", "=", query.Arg(username)))
@@ -99,10 +105,4 @@ func TestPosgresDB(t *testing.T) {
 
 	data, _ = json.Marshal(u)
 	t.Log(string(data))
-
-	if err = users.Delete(context.TODO(), u); err != nil {
-		if err != nil {
-			t.Error(err)
-		}
-	}
 }
