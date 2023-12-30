@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jkittell/data/structures"
+	"log"
 )
 
 type ScanFunc func(dest ...any) error
@@ -54,6 +55,7 @@ func (p *PosgresDB[M]) fields(rows pgx.Rows) []string {
 	return fields
 }
 
+// Create a new entity M in the database and return the primary key.
 func (p *PosgresDB[M]) Create(ctx context.Context, m M) (any, error) {
 	var key any
 	params := m.Params()
@@ -84,13 +86,13 @@ func (p *PosgresDB[M]) Create(ctx context.Context, m M) (any, error) {
 	defer rows.Close()
 
 	if !rows.Next() {
-		if err := rows.Err(); err != nil {
+		if err = rows.Err(); err != nil {
 			return key, err
 		}
 	}
 
-	if err := m.Scan(p.fields(rows), rows.Scan); err != nil {
-		return key, nil
+	if err = m.Scan(p.fields(rows), rows.Scan); err != nil {
+		return key, err
 	}
 
 	_, key = m.Primary()
@@ -144,24 +146,49 @@ func (p *PosgresDB[M]) Select(ctx context.Context, cols []string, opts ...query.
 
 	defer rows.Close()
 
-	mm := structures.NewArray[M]()
+	models := structures.NewArray[M]()
 
 	for rows.Next() {
 		m := p.new()
-
-		if err := m.Scan(p.fields(rows), rows.Scan); err != nil {
+		if err = m.Scan(p.fields(rows), rows.Scan); err != nil {
 			return nil, err
 		}
+		models.Push(m)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return mm, nil
+	return models, nil
 }
 
-func (p *PosgresDB[M]) All(ctx context.Context, opts ...query.Option) (*structures.Array[M], error) {
-	return p.Select(ctx, []string{"*"}, opts...)
+func (p *PosgresDB[M]) All(ctx context.Context) (*structures.Array[M], error) {
+	q := query.Select(query.Columns("*"), query.From(p.table))
+
+	log.Println(q.Build())
+
+	rows, err := p.Query(ctx, q.Build(), q.Args()...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	models := structures.NewArray[M]()
+
+	for rows.Next() {
+		m := p.new()
+		if err = m.Scan(p.fields(rows), rows.Scan); err != nil {
+			return nil, err
+		}
+		models.Push(m)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return models, nil
 }
 
 func (p *PosgresDB[M]) Get(ctx context.Context, opts ...query.Option) (M, bool, error) {

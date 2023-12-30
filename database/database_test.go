@@ -15,9 +15,12 @@ import (
 type User struct {
 	ID        int64
 	Email     string
-	Username  string
-	Password  []byte
+	FirstName string
+	LastName  string
+	Active    bool
+	Password  string
 	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (u *User) Primary() (string, any) {
@@ -28,18 +31,24 @@ func (u *User) Scan(fields []string, scan ScanFunc) error {
 	return Scan(map[string]any{
 		"id":         &u.ID,
 		"email":      &u.Email,
-		"username":   &u.Username,
+		"first_name": &u.FirstName,
+		"last_name":  &u.LastName,
 		"password":   &u.Password,
+		"active":     &u.Active,
 		"created_at": &u.CreatedAt,
+		"updated_at": &u.UpdatedAt,
 	}, fields, scan)
 }
 
 func (u *User) Params() map[string]any {
 	return map[string]any{
 		"email":      u.Email,
-		"username":   u.Username,
+		"first_name": u.FirstName,
+		"last_name":  u.LastName,
 		"password":   u.Password,
+		"active":     u.Active,
 		"created_at": u.CreatedAt,
+		"updated_at": u.UpdatedAt,
 	}
 }
 
@@ -64,13 +73,15 @@ func TestPosgresDB(t *testing.T) {
 		return &User{}
 	})
 
-	username := gofakeit.Username()
 	id, err := users.Create(context.TODO(), &User{
 		ID:        0,
 		Email:     gofakeit.Email(),
-		Username:  username,
-		Password:  []byte(gofakeit.Password(true, true, true, true, false, 10)),
+		FirstName: gofakeit.FirstName(),
+		LastName:  gofakeit.LastName(),
+		Password:  gofakeit.Password(true, true, true, true, false, 10),
+		Active:    true,
 		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	})
 
 	if err != nil {
@@ -83,7 +94,7 @@ func TestPosgresDB(t *testing.T) {
 		t.Fatal("no id returned")
 	}
 
-	u, ok, err := users.Get(context.TODO(), query.Where("username", "=", query.Arg(username)))
+	u, ok, err := users.Get(context.TODO(), query.Where("id", "=", query.Arg(id)))
 	if err != nil {
 		t.Error(err)
 	}
@@ -95,7 +106,7 @@ func TestPosgresDB(t *testing.T) {
 	data, _ := json.Marshal(u)
 	t.Log(string(data))
 
-	u.Password = []byte(gofakeit.Password(true, true, true, true, false, 10))
+	u.Password = gofakeit.Password(true, true, true, true, false, 10)
 
 	if err = users.Update(context.TODO(), u); err != nil {
 		if err != nil {
@@ -105,4 +116,14 @@ func TestPosgresDB(t *testing.T) {
 
 	data, _ = json.Marshal(u)
 	t.Log(string(data))
+
+	list, err := users.All(context.TODO())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < list.Length(); i++ {
+		u = list.Lookup(i)
+		data, _ = json.Marshal(u)
+		t.Log(string(data))
+	}
 }
