@@ -7,6 +7,7 @@ import (
 	"github.com/andrewpillar/query"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"go.mongodb.org/mongo-driver/bson"
 	"log"
 	"testing"
 	"time"
@@ -125,5 +126,47 @@ func TestPosgresDB(t *testing.T) {
 		u = list.Lookup(i)
 		data, _ = json.Marshal(u)
 		t.Log(string(data))
+	}
+}
+
+func TestMongoDB(t *testing.T) {
+	mongo, err := NewMongoDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	//disconnect when done
+	defer mongo.Client.Disconnect(context.Background())
+
+	//create a new user
+	user := User{
+		ID:        0,
+		Email:     gofakeit.Email(),
+		FirstName: gofakeit.FirstName(),
+		LastName:  gofakeit.LastName(),
+		Password:  gofakeit.Password(true, true, true, true, false, 10),
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	err = mongo.InsertEntity("users", user)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//create a filter by email
+	//function can be implemented to generate the filter so it can be more generic
+	filter := bson.D{{Key: "email", Value: "john.doe@example.com"}}
+	result := &[]User{}
+
+	err = mongo.SearchEntity("users", filter, result)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("user", result)
+
+	err = mongo.DeleteEntity("users", filter)
+	if err != nil {
+		log.Fatal(err)
 	}
 }
