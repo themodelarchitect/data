@@ -6,7 +6,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jkittell/data/structures"
-	"log"
 )
 
 type ScanFunc func(dest ...any) error
@@ -165,7 +164,7 @@ func (p *PosgresDB[M]) Select(ctx context.Context, cols []string, opts ...query.
 func (p *PosgresDB[M]) All(ctx context.Context) (*structures.Array[M], error) {
 	q := query.Select(query.Columns("*"), query.From(p.table))
 
-	log.Println(q.Build())
+	//log.Println(q.Build())
 
 	rows, err := p.Query(ctx, q.Build(), q.Args()...)
 

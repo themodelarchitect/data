@@ -4,47 +4,38 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"os"
-	"strings"
 )
 
-// export MONGOGB_CONNECTION_PORT=27017
-// export MONGOGB_CONNECTION_HOST=localhost
-// export MONGOGB_CONNECTION_DB=testdb
+// export MONGODB_HOST=mongodb
+// export MONGODB_PORT=27017
+// export MONGODB_NAME=testdb
 
-var ErrEnvNotFound = errors.New("environment variable no found")
+var ErrEnvNotFound = errors.New("environment variable not found")
 
 type MongoDB struct {
 	Client   *mongo.Client
 	Database string
 }
 
-func lookupEnv(name string) (string, error) {
-	value, isSet := os.LookupEnv(name)
-	if !isSet {
-		return "", ErrEnvNotFound
-	}
-	value = strings.TrimSpace(value)
-	if len(value) == 0 {
-		return "", ErrEnvNotFound
-	}
-	return value, ErrEnvNotFound
-}
-
-func NewMongoDB() (MongoDB, error) {
-	host, err := lookupEnv("MONGOGB_CONNECTION_HOST")
+// NewMongoDB takes an env file and returns mongo client
+func NewMongoDB(env string) (MongoDB, error) {
+	var db string
+	viper.SetConfigFile(env)
+	err := viper.ReadInConfig()
 	if err != nil {
 		return MongoDB{}, err
 	}
-	port, err := lookupEnv("MONGOGB_CONNECTION_PORT")
-	if err != nil {
-		return MongoDB{}, err
-	}
-	db, err := lookupEnv("MONGOGB_CONNECTION_DB")
-	if err != nil {
-		return MongoDB{}, err
+	host := viper.Get("MONGODB_HOST")
+	port := viper.Get("MONGODB_PORT")
+	name := viper.Get("MONGODB_NAME")
+	val, ok := name.(string)
+	if ok {
+		db = val
+	} else {
+		return MongoDB{}, errors.New("could not get database name")
 	}
 
 	connectionURI := fmt.Sprintf("mongodb://%s:%s", host, port)
@@ -71,7 +62,7 @@ func NewMongoDB() (MongoDB, error) {
 	}, nil
 }
 
-func (m *MongoDB) InsertEntity(ctx context.Context, collectionName string, document interface{}) error {
+func (m *MongoDB) Insert(ctx context.Context, collectionName string, document any) error {
 	collection := m.Client.Database(m.Database).Collection(collectionName)
 	_, err := collection.InsertOne(ctx, document)
 	if err != nil {
@@ -80,21 +71,24 @@ func (m *MongoDB) InsertEntity(ctx context.Context, collectionName string, docum
 	return nil
 }
 
-func (m *MongoDB) SearchEntity(ctx context.Context, collectionName string, filter interface{}, result interface{}) error {
+func (m *MongoDB) Search(ctx context.Context, collectionName string, filter any, results any) error {
+	if filter == nil {
+		return errors.New("filter cannot be nil")
+	}
 	collection := m.Client.Database(m.Database).Collection(collectionName)
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {
 		return err
 	}
 	defer cursor.Close(ctx)
-	err = cursor.All(ctx, result)
+	err = cursor.All(ctx, results)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (m *MongoDB) DeleteEntity(ctx context.Context, collectionName string, filter interface{}) error {
+func (m *MongoDB) Delete(ctx context.Context, collectionName string, filter any) error {
 	collection := m.Client.Database(m.Database).Collection(collectionName)
 	_, err := collection.DeleteOne(ctx, filter)
 	if err != nil {

@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/andrewpillar/query"
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -14,7 +13,7 @@ import (
 )
 
 type User struct {
-	ID        int64
+	ID        int
 	Email     string
 	FirstName string
 	LastName  string
@@ -101,7 +100,7 @@ func TestPosgresDB(t *testing.T) {
 	}
 
 	if !ok {
-		fmt.Println("user not found")
+		t.Log("user not found")
 	}
 
 	data, _ := json.Marshal(u)
@@ -130,17 +129,19 @@ func TestPosgresDB(t *testing.T) {
 }
 
 func TestMongoDB(t *testing.T) {
-	mongo, err := NewMongoDB()
+	mongo, err := NewMongoDB(".env")
 	if err != nil {
 		log.Fatal(err)
 	}
 	//disconnect when done
 	defer mongo.Client.Disconnect(context.Background())
 
+	email := gofakeit.Email()
+
 	//create a new user
 	user := User{
-		ID:        0,
-		Email:     gofakeit.Email(),
+		ID:        gofakeit.Number(0, 100000),
+		Email:     email,
 		FirstName: gofakeit.FirstName(),
 		LastName:  gofakeit.LastName(),
 		Password:  gofakeit.Password(true, true, true, true, false, 10),
@@ -148,25 +149,29 @@ func TestMongoDB(t *testing.T) {
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 	}
-	err = mongo.InsertEntity("users", user)
+	err = mongo.Insert(context.TODO(), "users", user)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	//create a filter by email
-	//function can be implemented to generate the filter so it can be more generic
-	filter := bson.D{{Key: "email", Value: "john.doe@example.com"}}
-	result := &[]User{}
+	filter := bson.D{{Key: "email", Value: email}}
+	var results []User
 
-	err = mongo.SearchEntity("users", filter, result)
+	err = mongo.Search(context.TODO(), "users", filter, &results)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("user", result)
+	for _, u := range results {
+		t.Logf("%+v", u)
+	}
 
-	err = mongo.DeleteEntity("users", filter)
-	if err != nil {
-		log.Fatal(err)
+	// get all
+	var all []User
+	filterAll := bson.D{{}}
+	_ = mongo.Search(context.TODO(), "users", filterAll, &all)
+	for _, u := range all {
+		t.Logf("%+v", u)
 	}
 }
