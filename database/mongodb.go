@@ -112,3 +112,15 @@ func (m *MongoDB) Delete(ctx context.Context, collectionName string, filter any)
 	}
 	return nil
 }
+
+func (m *MongoDB) Drop(ctx context.Context, collectionName string) error {
+	collection := m.Client.Database(m.Database).Collection(collectionName)
+	if err := collection.Drop(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MongoDB) Count(ctx context.Context, collectionName string) (int64, error) {
+	return m.Client.Database(m.Database).Collection(collectionName).EstimatedDocumentCount(ctx)
+}

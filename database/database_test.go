@@ -128,6 +128,19 @@ func TestPosgresDB(t *testing.T) {
 	}
 }
 
+func newUser(id int, email string) User {
+	return User{
+		ID:        id,
+		Email:     email,
+		FirstName: gofakeit.FirstName(),
+		LastName:  gofakeit.LastName(),
+		Password:  gofakeit.Password(true, true, true, true, false, 10),
+		Active:    true,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
+
 func TestMongoDB(t *testing.T) {
 	mongo, err := NewMongoDB("test.env")
 	if err != nil {
@@ -139,16 +152,7 @@ func TestMongoDB(t *testing.T) {
 	email := gofakeit.Email()
 
 	//create a new user
-	user := User{
-		ID:        gofakeit.Number(0, 100000),
-		Email:     email,
-		FirstName: gofakeit.FirstName(),
-		LastName:  gofakeit.LastName(),
-		Password:  gofakeit.Password(true, true, true, true, false, 10),
-		Active:    true,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
+	user := newUser(gofakeit.Number(0, 100000), gofakeit.Email())
 	err = mongo.Insert(context.TODO(), "users", user)
 	if err != nil {
 		log.Fatal(err)
@@ -173,4 +177,42 @@ func TestMongoDB(t *testing.T) {
 	for _, u := range all {
 		t.Logf("%+v", u)
 	}
+}
+
+func TestMongoDB_Drop(t *testing.T) {
+	mongo, err := NewMongoDB("test.env")
+	if err != nil {
+		log.Fatal(err)
+	}
+	//disconnect when done
+	defer mongo.Client.Disconnect(context.Background())
+
+	for i := 0; i < 10; i++ {
+		user := newUser(gofakeit.Number(0, 100000), gofakeit.Email())
+		err = mongo.Insert(context.TODO(), "users", user)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	countBefore, err := mongo.Count(context.TODO(), "users")
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Log(countBefore)
+
+	err = mongo.Drop(context.TODO(), "users")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	countAfter, err := mongo.Count(context.TODO(), "users")
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Log(countAfter)
+	if countAfter > 0 {
+		t.Fatal(countAfter)
+	}
+
 }
