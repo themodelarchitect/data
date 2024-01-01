@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -75,6 +76,21 @@ func (m *MongoDB) Search(ctx context.Context, collectionName string, filter any,
 	if filter == nil {
 		return errors.New("filter cannot be nil")
 	}
+	collection := m.Client.Database(m.Database).Collection(collectionName)
+	cursor, err := collection.Find(ctx, filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(ctx)
+	err = cursor.All(ctx, results)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *MongoDB) All(ctx context.Context, collectionName string, results any) error {
+	filter := bson.D{{}}
 	collection := m.Client.Database(m.Database).Collection(collectionName)
 	cursor, err := collection.Find(ctx, filter)
 	if err != nil {

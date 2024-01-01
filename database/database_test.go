@@ -129,7 +129,7 @@ func TestPosgresDB(t *testing.T) {
 }
 
 func TestMongoDB(t *testing.T) {
-	mongo, err := NewMongoDB(".env")
+	mongo, err := NewMongoDB("test.env")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,8 +169,7 @@ func TestMongoDB(t *testing.T) {
 
 	// get all
 	var all []User
-	filterAll := bson.D{{}}
-	_ = mongo.Search(context.TODO(), "users", filterAll, &all)
+	_ = mongo.All(context.TODO(), "users", &all)
 	for _, u := range all {
 		t.Logf("%+v", u)
 	}
