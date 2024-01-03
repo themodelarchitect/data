@@ -3,7 +3,6 @@ package client
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -61,7 +60,6 @@ func request(method requestMethod, fullUrl string, headers map[string]string, qu
 
 	u, err := url.Parse(fullUrl)
 	if err != nil {
-		log.Println(err)
 		return b, err
 	}
 
@@ -80,7 +78,6 @@ func request(method requestMethod, fullUrl string, headers map[string]string, qu
 	// create a request
 	req, err := http.NewRequest(method.String(), u.String(), body)
 	if err != nil {
-		log.Println(err)
 		return b, err
 	}
 
@@ -93,12 +90,9 @@ func request(method requestMethod, fullUrl string, headers map[string]string, qu
 		}
 	}
 
-	log.Printf("%s %s\n", method, req.URL.String())
-
 	// send request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Println(err)
 		return b, err
 	}
 
@@ -109,7 +103,6 @@ func request(method requestMethod, fullUrl string, headers map[string]string, qu
 
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err)
 		return b, err
 	}
 
