@@ -2,10 +2,14 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"github.com/andrewpillar/query"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jkittell/data/structures"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
+	"log"
 )
 
 type ScanFunc func(dest ...any) error
@@ -36,12 +40,61 @@ type PosgresDB[M Model] struct {
 	new   func() M
 }
 
-func NewPostgresDB[M Model](pool *pgxpool.Pool, table string, new func() M) *PosgresDB[M] {
-	return &PosgresDB[M]{
-		Pool:  pool,
-		table: table,
-		new:   new,
+// NewPostgresDB takes a .env config file, table name and new func.
+// .env file example
+// POSTGRES_HOST=postgres
+// POSTGRES_PORT=5432
+// POSTGRES_USERNAME=postgres
+// POSTGRES_PASSWORD=changeme
+func NewPostgresDB[M Model](env, table string, new func() M) (PosgresDB[M], error) {
+	var db PosgresDB[M]
+	var databaseURL string
+	viper.SetConfigFile(env)
+	err := viper.ReadInConfig()
+	if err != nil {
+		return db, err
 	}
+	host := viper.Get("POSTGRES_HOST")
+	port := viper.Get("POSTGRES_PORT")
+	username := viper.Get("POSTGRES_USERNAME")
+	password := viper.Get("POSTGRES_PASSWORD")
+
+	host, ok := host.(string)
+	if !ok {
+		return db, errors.New("could not get postgres db host")
+	}
+
+	port, ok = port.(string)
+	if !ok {
+		return db, errors.New("could not get postgres db port")
+	}
+
+	username, ok = username.(string)
+	if !ok {
+		return db, errors.New("could not get postgres db username")
+	}
+
+	password, ok = password.(string)
+	if !ok {
+		return db, errors.New("could not get postgres db password")
+	}
+
+	//databaseURL := "postgres://postgres:changeme@localhost:5432/postgres"
+	databaseURL = fmt.Sprintf("postgres://%s:%s@%s:%s/postgres", username, password, host, port)
+
+	// this returns connection pool
+	pool, err := pgxpool.Connect(context.Background(), databaseURL)
+
+	if err != nil {
+		log.Println(databaseURL)
+		log.Fatalf("Unable to connect to database: %v\n", err)
+	}
+
+	db.Pool = pool
+	db.table = table
+	db.new = new
+
+	return db, err
 }
 
 func (p *PosgresDB[M]) fields(rows pgx.Rows) []string {

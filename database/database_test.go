@@ -70,9 +70,12 @@ func TestPosgresDB(t *testing.T) {
 	}
 	defer pool.Close()
 
-	users := NewPostgresDB[*User](pool, "users", func() *User {
+	users, err := NewPostgresDB[*User](".env", "users", func() *User {
 		return &User{}
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	id, err := users.Create(context.TODO(), &User{
 		ID:        uuid.New(),
@@ -143,7 +146,7 @@ func newUser(id uuid.UUID, email string) User {
 }
 
 func TestMongoDB(t *testing.T) {
-	mongo, err := NewMongoDB[User]("test.env", "users")
+	mongo, err := NewMongoDB[User](".env", "users")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,7 +182,7 @@ func TestMongoDB(t *testing.T) {
 }
 
 func TestMongoDB_FindByID(t *testing.T) {
-	mongo, err := NewMongoDB[User]("test.env", "users")
+	mongo, err := NewMongoDB[User](".env", "users")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,7 +220,7 @@ func TestMongoDB_Update(t *testing.T) {
 }
 
 func TestMongoDB_Drop(t *testing.T) {
-	mongo, err := NewMongoDB[User]("test.env", "users")
+	mongo, err := NewMongoDB[User](".env", "users")
 	if err != nil {
 		log.Fatal(err)
 	}
