@@ -9,7 +9,6 @@ import (
 	"github.com/jkittell/data/structures"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"log"
 )
 
 type ScanFunc func(dest ...any) error
@@ -86,8 +85,12 @@ func NewPostgresDB[M Model](env, table string, new func() M) (PosgresDB[M], erro
 	pool, err := pgxpool.Connect(context.Background(), databaseURL)
 
 	if err != nil {
-		log.Println(databaseURL)
-		log.Fatalf("Unable to connect to database: %v\n", err)
+		return db, errors.New(fmt.Sprintf("unable to connect to database: %v\nconnection string:%s\n", err, databaseURL))
+	}
+
+	err = pool.Ping(context.TODO())
+	if err != nil {
+		return db, err
 	}
 
 	db.Pool = pool
