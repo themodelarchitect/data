@@ -41,10 +41,12 @@ type PosgresDB[M Model] struct {
 
 // NewPostgresDB takes a .env config file, table name and new func.
 // .env file example
-// POSTGRES_HOST=postgres
-// POSTGRES_PORT=5432
-// POSTGRES_USERNAME=postgres
-// POSTGRES_PASSWORD=changeme
+/*
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_USERNAME=postgres
+POSTGRES_PASSWORD=changeme
+*/
 func NewPostgresDB[M Model](env, table string, new func() M) (PosgresDB[M], error) {
 	var db PosgresDB[M]
 	var databaseURL string
@@ -100,7 +102,7 @@ func NewPostgresDB[M Model](env, table string, new func() M) (PosgresDB[M], erro
 	return db, err
 }
 
-func (p *PosgresDB[M]) fields(rows pgx.Rows) []string {
+func (p PosgresDB[M]) fields(rows pgx.Rows) []string {
 	descriptions := rows.FieldDescriptions()
 	fields := make([]string, 0, len(descriptions))
 
@@ -111,7 +113,7 @@ func (p *PosgresDB[M]) fields(rows pgx.Rows) []string {
 }
 
 // Create a new entity M in the database and return the primary key.
-func (p *PosgresDB[M]) Create(ctx context.Context, m M) (any, error) {
+func (p PosgresDB[M]) Create(ctx context.Context, m M) (any, error) {
 	var key any
 	params := m.Params()
 
@@ -154,7 +156,7 @@ func (p *PosgresDB[M]) Create(ctx context.Context, m M) (any, error) {
 	return key, nil
 }
 
-func (p *PosgresDB[M]) Update(ctx context.Context, m M) error {
+func (p PosgresDB[M]) Update(ctx context.Context, m M) error {
 	params := m.Params()
 
 	opts := make([]query.Option, 0, len(params))
@@ -175,7 +177,7 @@ func (p *PosgresDB[M]) Update(ctx context.Context, m M) error {
 	return nil
 }
 
-func (p *PosgresDB[M]) Delete(ctx context.Context, m M) error {
+func (p PosgresDB[M]) Delete(ctx context.Context, m M) error {
 	col, id := m.Primary()
 
 	q := query.Delete(p.table, query.Where(col, "=", query.Arg(id)))
@@ -186,7 +188,7 @@ func (p *PosgresDB[M]) Delete(ctx context.Context, m M) error {
 	return nil
 }
 
-func (p *PosgresDB[M]) Select(ctx context.Context, cols []string, opts ...query.Option) (*structures.Array[M], error) {
+func (p PosgresDB[M]) Select(ctx context.Context, cols []string, opts ...query.Option) (*structures.Array[M], error) {
 	opts = append([]query.Option{
 		query.From(p.table),
 	}, opts...)
@@ -217,7 +219,7 @@ func (p *PosgresDB[M]) Select(ctx context.Context, cols []string, opts ...query.
 	return models, nil
 }
 
-func (p *PosgresDB[M]) All(ctx context.Context) (*structures.Array[M], error) {
+func (p PosgresDB[M]) All(ctx context.Context) (*structures.Array[M], error) {
 	q := query.Select(query.Columns("*"), query.From(p.table))
 
 	//log.Println(q.Build())
@@ -246,7 +248,7 @@ func (p *PosgresDB[M]) All(ctx context.Context) (*structures.Array[M], error) {
 	return models, nil
 }
 
-func (p *PosgresDB[M]) Get(ctx context.Context, opts ...query.Option) (M, bool, error) {
+func (p PosgresDB[M]) Get(ctx context.Context, opts ...query.Option) (M, bool, error) {
 	var zero M
 
 	opts = append([]query.Option{
