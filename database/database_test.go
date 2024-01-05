@@ -189,9 +189,10 @@ func TestMongoDB_FindByID(t *testing.T) {
 	//disconnect when done
 	defer mongo.Client.Disconnect(context.Background())
 
+	id := uuid.New()
 	email := gofakeit.Email()
 	//create a new user
-	user := newUser(uuid.New(), email)
+	user := newUser(id, email)
 	err = mongo.Insert(context.TODO(), user)
 	if err != nil {
 		log.Fatal(err)
@@ -208,7 +209,11 @@ func TestMongoDB_FindByID(t *testing.T) {
 
 	res := results[0]
 	t.Log(res)
-	u, err := mongo.FindByID(context.TODO(), res.ID)
+	val, err := uuid.Parse(id.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, err := mongo.FindByID(context.TODO(), val)
 	if err != nil {
 		t.Fatal(err)
 	}
