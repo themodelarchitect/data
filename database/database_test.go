@@ -14,7 +14,7 @@ import (
 )
 
 type User struct {
-	ID        uuid.UUID `bson:"_id"`
+	Id        uuid.UUID `bson:"_id"`
 	Email     string
 	FirstName string
 	LastName  string
@@ -25,12 +25,12 @@ type User struct {
 }
 
 func (u *User) Primary() (string, any) {
-	return "id", u.ID
+	return "id", u.Id
 }
 
 func (u *User) Scan(fields []string, scan ScanFunc) error {
 	return Scan(map[string]any{
-		"id":         &u.ID,
+		"id":         &u.Id,
 		"email":      &u.Email,
 		"first_name": &u.FirstName,
 		"last_name":  &u.LastName,
@@ -78,7 +78,7 @@ func TestPosgresDB(t *testing.T) {
 	}
 
 	id, err := users.Create(context.TODO(), &User{
-		ID:        uuid.New(),
+		Id:        uuid.New(),
 		Email:     gofakeit.Email(),
 		FirstName: gofakeit.FirstName(),
 		LastName:  gofakeit.LastName(),
@@ -134,7 +134,7 @@ func TestPosgresDB(t *testing.T) {
 
 func newUser(id uuid.UUID, email string) User {
 	return User{
-		ID:        id,
+		Id:        id,
 		Email:     email,
 		FirstName: gofakeit.FirstName(),
 		LastName:  gofakeit.LastName(),
@@ -221,7 +221,29 @@ func TestMongoDB_FindByID(t *testing.T) {
 }
 
 func TestMongoDB_Update(t *testing.T) {
+	mongo, err := NewMongoDB[User](".env", "users")
+	if err != nil {
+		log.Fatal(err)
+	}
+	//disconnect when done
+	defer mongo.Client.Disconnect(context.TODO())
 
+	id := uuid.New()
+	email := gofakeit.Email()
+	//create a new user
+	user := newUser(id, email)
+	err = mongo.Insert(context.TODO(), user)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	user.Email = gofakeit.Email()
+	user.UpdatedAt = time.Now()
+	_, err = mongo.Update(context.TODO(), user.Id, user)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(user.Id, user.Email)
 }
 
 func TestMongoDB_Drop(t *testing.T) {

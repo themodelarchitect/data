@@ -123,10 +123,13 @@ func (m *MongoDB[T]) All(ctx context.Context, opts *options.FindOptions) ([]T, e
 func (m *MongoDB[T]) Update(ctx context.Context, id uuid.UUID, document T) (*mongo.UpdateResult, error) {
 	collection := m.Client.Database(m.DatabaseName).Collection(m.CollectionName)
 
+	filter := bson.D{{"_id", id}}
+	//update := bson.D{{"$set", bson.D{{"email", "newemail@example.com"}}}}
+	update := bson.D{{"$set", document}}
 	result, err := collection.UpdateOne(
 		ctx,
-		bson.M{"_id": id},
-		document,
+		filter,
+		update,
 	)
 
 	if err != nil {
