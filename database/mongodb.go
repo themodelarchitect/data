@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"os"
 )
 
 // MONGODB_HOST=mongodb
@@ -22,23 +22,10 @@ type MongoDB[T any] struct {
 }
 
 // NewMongoDB takes an env file and returns mongo client
-func NewMongoDB[T any](env, collectionName string) (MongoDB[T], error) {
-	var db string
-	viper.SetConfigFile(env)
-	err := viper.ReadInConfig()
-	if err != nil {
-		return MongoDB[T]{}, err
-	}
-	host := viper.Get("MONGODB_HOST")
-	port := viper.Get("MONGODB_PORT")
-	name := viper.Get("MONGODB_NAME")
-	val, ok := name.(string)
-	if ok {
-		db = val
-	} else {
-		return MongoDB[T]{}, errors.New("could not get database name")
-	}
-
+func NewMongoDB[T any](collectionName string) (MongoDB[T], error) {
+	host := os.Getenv("MONGODB_HOST")
+	port := os.Getenv("MONGODB_PORT")
+	name := os.Getenv("MONGODB_NAME")
 	connectionURI := fmt.Sprintf("mongodb://%s:%s", host, port)
 
 	//set the client options
@@ -59,7 +46,7 @@ func NewMongoDB[T any](env, collectionName string) (MongoDB[T], error) {
 	//return the client
 	return MongoDB[T]{
 		Client:         client,
-		DatabaseName:   db,
+		DatabaseName:   name,
 		CollectionName: collectionName,
 	}, nil
 }

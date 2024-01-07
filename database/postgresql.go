@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jkittell/data/structures"
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
+	"os"
 )
 
 type ScanFunc func(dest ...any) error
@@ -47,38 +47,13 @@ POSTGRES_PORT=5432
 POSTGRES_USERNAME=postgres
 POSTGRES_PASSWORD=changeme
 */
-func NewPostgresDB[M Model](env, table string, new func() M) (PosgresDB[M], error) {
+func NewPostgresDB[M Model](table string, new func() M) (PosgresDB[M], error) {
 	var db PosgresDB[M]
 	var databaseURL string
-	viper.SetConfigFile(env)
-	err := viper.ReadInConfig()
-	if err != nil {
-		return db, err
-	}
-	host := viper.Get("POSTGRES_HOST")
-	port := viper.Get("POSTGRES_PORT")
-	username := viper.Get("POSTGRES_USERNAME")
-	password := viper.Get("POSTGRES_PASSWORD")
-
-	host, ok := host.(string)
-	if !ok {
-		return db, errors.New("could not get postgres db host")
-	}
-
-	port, ok = port.(string)
-	if !ok {
-		return db, errors.New("could not get postgres db port")
-	}
-
-	username, ok = username.(string)
-	if !ok {
-		return db, errors.New("could not get postgres db username")
-	}
-
-	password, ok = password.(string)
-	if !ok {
-		return db, errors.New("could not get postgres db password")
-	}
+	host := os.Getenv("POSTGRES_HOST")
+	port := os.Getenv("POSTGRES_PORT")
+	username := os.Getenv("POSTGRES_USERNAME")
+	password := os.Getenv("POSTGRES_PASSWORD")
 
 	//databaseURL := "postgres://postgres:changeme@localhost:5432/postgres"
 	databaseURL = fmt.Sprintf("postgres://%s:%s@%s:%s/postgres", username, password, host, port)

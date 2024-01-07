@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.mongodb.org/mongo-driver/bson"
-	"log"
+	"os"
 	"testing"
 	"time"
 )
@@ -53,7 +53,22 @@ func (u *User) Params() map[string]any {
 	}
 }
 
+func setup(t *testing.T) func(t *testing.T) {
+	os.Setenv("POSTGRES_HOST", "127.0.0.1")
+	os.Setenv("POSTGRES_PORT", "5432")
+	os.Setenv("POSTGRES_USERNAME", "postgres")
+	os.Setenv("POSTGRES_PASSWORD", "changeme")
+	os.Setenv("MONGODB_HOST", "127.0.0.1")
+	os.Setenv("MONGODB_PORT", "27017")
+	os.Setenv("MONGODB_NAME", "testdb")
+
+	return func(t *testing.T) {}
+}
+
 func TestPosgresDB(t *testing.T) {
+	teardown := setup(t)
+	defer teardown(t)
+
 	// get the database connection URL.
 	// usually, this is taken as an environment variable as in below commented out code
 	// databaseURL = os.Getenv("DATABASE_URL")
@@ -66,11 +81,11 @@ func TestPosgresDB(t *testing.T) {
 	pool, err := pgxpool.Connect(context.Background(), databaseURL)
 
 	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
+		t.Fatalf("Unable to connect to database: %v\n", err)
 	}
 	defer pool.Close()
 
-	users, err := NewPostgresDB[*User](".env", "users", func() *User {
+	users, err := NewPostgresDB[*User]("users", func() *User {
 		return &User{}
 	})
 	if err != nil {
@@ -146,9 +161,12 @@ func newUser(id uuid.UUID, email string) User {
 }
 
 func TestMongoDB(t *testing.T) {
-	mongo, err := NewMongoDB[User](".env", "users")
+	teardown := setup(t)
+	defer teardown(t)
+
+	mongo, err := NewMongoDB[User]("users")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	//disconnect when done
 	defer mongo.Client.Disconnect(context.Background())
@@ -159,7 +177,7 @@ func TestMongoDB(t *testing.T) {
 	user := newUser(uuid.New(), gofakeit.Email())
 	err = mongo.Insert(context.TODO(), user)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	//create a filter by email
@@ -167,7 +185,7 @@ func TestMongoDB(t *testing.T) {
 
 	results, err := mongo.Search(context.TODO(), filter, nil)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	for _, u := range results {
@@ -182,9 +200,12 @@ func TestMongoDB(t *testing.T) {
 }
 
 func TestMongoDB_FindByID(t *testing.T) {
-	mongo, err := NewMongoDB[User](".env", "users")
+	teardown := setup(t)
+	defer teardown(t)
+
+	mongo, err := NewMongoDB[User]("users")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	//disconnect when done
 	defer mongo.Client.Disconnect(context.Background())
@@ -195,7 +216,7 @@ func TestMongoDB_FindByID(t *testing.T) {
 	user := newUser(id, email)
 	err = mongo.Insert(context.TODO(), user)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 
 	//create a filter by email
@@ -221,9 +242,12 @@ func TestMongoDB_FindByID(t *testing.T) {
 }
 
 func TestMongoDB_Update(t *testing.T) {
-	mongo, err := NewMongoDB[User](".env", "users")
+	teardown := setup(t)
+	defer teardown(t)
+
+	mongo, err := NewMongoDB[User]("users")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	//disconnect when done
 	defer mongo.Client.Disconnect(context.TODO())
@@ -247,9 +271,12 @@ func TestMongoDB_Update(t *testing.T) {
 }
 
 func TestMongoDB_Drop(t *testing.T) {
-	mongo, err := NewMongoDB[User](".env", "users")
+	teardown := setup(t)
+	defer teardown(t)
+
+	mongo, err := NewMongoDB[User]("users")
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	//disconnect when done
 	defer mongo.Client.Disconnect(context.Background())
@@ -258,13 +285,13 @@ func TestMongoDB_Drop(t *testing.T) {
 		user := newUser(uuid.New(), gofakeit.Email())
 		err = mongo.Insert(context.TODO(), user)
 		if err != nil {
-			log.Fatal(err)
+			t.Fatal(err)
 		}
 	}
 
 	countBefore, err := mongo.Count(context.TODO())
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	t.Log(countBefore)
 
@@ -275,7 +302,7 @@ func TestMongoDB_Drop(t *testing.T) {
 
 	countAfter, err := mongo.Count(context.TODO())
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	t.Log(countAfter)
 	if countAfter > 0 {
