@@ -9,6 +9,13 @@ import (
 
 // docker run -p 80:80 kennethreitz/httpbin
 
+func TestGetHTTPS(t *testing.T) {
+	_, err := Get("https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGet(t *testing.T) {
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/json"

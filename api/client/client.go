@@ -1,6 +1,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -89,9 +90,11 @@ func request(method requestMethod, fullUrl string, headers map[string]string, qu
 			req.Header.Add(k, v)
 		}
 	}
-
-	// send request
-	resp, err := http.DefaultClient.Do(req)
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+	resp, err := client.Do(req)
 	if err != nil {
 		return b, err
 	}
