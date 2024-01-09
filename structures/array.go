@@ -134,3 +134,11 @@ func (arr *Array[T]) Merge(items *Array[T]) *Array[T] {
 	}
 	return mergedArray
 }
+
+func (arr *Array[T]) ToSlice() []T {
+	var slice []T
+	for i := 0; i < arr.Length(); i++ {
+		slice = append(slice, arr.Lookup(i))
+	}
+	return slice
+}
