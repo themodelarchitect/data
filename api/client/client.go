@@ -36,6 +36,14 @@ func (method requestMethod) String() string {
 	}
 }
 
+func Head(url string) (resp *http.Response, err error) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	c := &http.Client{Transport: tr}
+	return c.Head(url)
+}
+
 func Get(url string, headers map[string]string, queryParams url.Values) ([]byte, error) {
 	return request(GET, url, headers, queryParams, nil)
 }

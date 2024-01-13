@@ -2,7 +2,6 @@ package client
 
 import (
 	"bytes"
-	"log"
 	"net/url"
 	"testing"
 )
@@ -16,6 +15,17 @@ func TestGetHTTPS(t *testing.T) {
 	}
 }
 
+func TestHead(t *testing.T) {
+	resp, err := Head("https://golang.org")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log(resp.StatusCode)
+	t.Log(resp.ContentLength)
+
+}
+
 func TestGet(t *testing.T) {
 	headers := make(map[string]string)
 	headers["Content-Type"] = "application/json"
@@ -24,10 +34,9 @@ func TestGet(t *testing.T) {
 	queryParameters.Add("foo", "bar")
 	res, err := Get("http://127.0.0.1/get", headers, queryParameters)
 	if err != nil {
-		log.Println(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
-	log.Println(string(res))
+	t.Log(string(res))
 }
 
 func TestPost(t *testing.T) {
@@ -38,10 +47,9 @@ func TestPost(t *testing.T) {
 	body := bytes.NewBufferString(`{"name": "test"}`)
 	res, err := Post("http://127.0.0.1/post", headers, body)
 	if err != nil {
-		log.Println(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
-	log.Println(string(res))
+	t.Log(string(res))
 }
 
 func TestPut(t *testing.T) {
@@ -52,10 +60,9 @@ func TestPut(t *testing.T) {
 	body := bytes.NewBufferString(`{"name": "test"}`)
 	res, err := Put("http://127.0.0.1/put", headers, body)
 	if err != nil {
-		log.Println(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
-	log.Println(string(res))
+	t.Log(string(res))
 }
 
 func TestPatch(t *testing.T) {
@@ -66,10 +73,9 @@ func TestPatch(t *testing.T) {
 	body := bytes.NewBufferString(`{"name": "test"}`)
 	res, err := Patch("http://127.0.0.1/patch", headers, body)
 	if err != nil {
-		log.Println(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
-	log.Println(string(res))
+	t.Log(string(res))
 }
 
 func TestDelete(t *testing.T) {
@@ -78,8 +84,7 @@ func TestDelete(t *testing.T) {
 
 	res, err := Delete("http://127.0.0.1/delete", headers)
 	if err != nil {
-		log.Println(err)
-		t.FailNow()
+		t.Fatal(err)
 	}
-	log.Println(string(res))
+	t.Log(string(res))
 }
