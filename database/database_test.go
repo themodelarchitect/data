@@ -164,7 +164,7 @@ func TestMongoDB(t *testing.T) {
 	teardown := setup(t)
 	defer teardown(t)
 
-	mongo, err := NewMongoDB[User]("users")
+	mongo, err := NewMongoDB[User]()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestMongoDB(t *testing.T) {
 
 	//create a new user
 	user := newUser(uuid.New(), gofakeit.Email())
-	err = mongo.Insert(context.TODO(), user)
+	err = mongo.Insert(context.TODO(), "users", user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -183,7 +183,7 @@ func TestMongoDB(t *testing.T) {
 	//create a filter by email
 	filter := bson.D{{Key: "email", Value: email}}
 
-	results, err := mongo.Search(context.TODO(), filter, nil)
+	results, err := mongo.Search(context.TODO(), "users", filter, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -193,7 +193,7 @@ func TestMongoDB(t *testing.T) {
 	}
 
 	// get all
-	all, err := mongo.All(context.TODO(), nil)
+	all, err := mongo.All(context.TODO(), "users", nil)
 	for _, u := range all {
 		t.Logf("%+v", u)
 	}
@@ -203,7 +203,7 @@ func TestMongoDB_FindByID(t *testing.T) {
 	teardown := setup(t)
 	defer teardown(t)
 
-	mongo, err := NewMongoDB[User]("users")
+	mongo, err := NewMongoDB[User]()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +214,7 @@ func TestMongoDB_FindByID(t *testing.T) {
 	email := gofakeit.Email()
 	//create a new user
 	user := newUser(id, email)
-	err = mongo.Insert(context.TODO(), user)
+	err = mongo.Insert(context.TODO(), "users", user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -223,7 +223,7 @@ func TestMongoDB_FindByID(t *testing.T) {
 	filter := bson.D{{Key: "email", Value: email}}
 
 	t.Log(filter)
-	results, err := mongo.Search(context.TODO(), filter, nil)
+	results, err := mongo.Search(context.TODO(), "users", filter, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +234,7 @@ func TestMongoDB_FindByID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	u, err := mongo.FindByID(context.TODO(), val)
+	u, err := mongo.FindByID(context.TODO(), "users", val)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -245,7 +245,7 @@ func TestMongoDB_Update(t *testing.T) {
 	teardown := setup(t)
 	defer teardown(t)
 
-	mongo, err := NewMongoDB[User]("users")
+	mongo, err := NewMongoDB[User]()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,14 +256,14 @@ func TestMongoDB_Update(t *testing.T) {
 	email := gofakeit.Email()
 	//create a new user
 	user := newUser(id, email)
-	err = mongo.Insert(context.TODO(), user)
+	err = mongo.Insert(context.TODO(), "users", user)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	user.Email = gofakeit.Email()
 	user.UpdatedAt = time.Now()
-	_, err = mongo.Update(context.TODO(), user.Id, user)
+	_, err = mongo.Update(context.TODO(), "users", user.Id, user)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func TestMongoDB_Drop(t *testing.T) {
 	teardown := setup(t)
 	defer teardown(t)
 
-	mongo, err := NewMongoDB[User]("users")
+	mongo, err := NewMongoDB[User]()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,24 +283,24 @@ func TestMongoDB_Drop(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		user := newUser(uuid.New(), gofakeit.Email())
-		err = mongo.Insert(context.TODO(), user)
+		err = mongo.Insert(context.TODO(), "users", user)
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	countBefore, err := mongo.Count(context.TODO())
+	countBefore, err := mongo.Count(context.TODO(), "users")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log(countBefore)
 
-	err = mongo.Drop(context.TODO())
+	err = mongo.Drop(context.TODO(), "users")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	countAfter, err := mongo.Count(context.TODO())
+	countAfter, err := mongo.Count(context.TODO(), "users")
 	if err != nil {
 		t.Fatal(err)
 	}
