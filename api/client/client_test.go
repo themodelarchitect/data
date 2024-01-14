@@ -16,7 +16,7 @@ func TestGetHTTPS(t *testing.T) {
 }
 
 func TestHead(t *testing.T) {
-	resp, err := Head("https://golang.org")
+	resp, err := Head("http://devimages.apple.com/iphone/samples/bipbop/gear4/fileSequence179.ts")
 	if err != nil {
 		t.Fatal(err)
 	}
