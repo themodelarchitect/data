@@ -6,7 +6,7 @@ import (
 	"github.com/andrewpillar/query"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jkittell/data/structures"
+	"github.com/themodelarchitect/data/structures"
 	"github.com/pkg/errors"
 	"os"
 )
